@@ -1,6 +1,6 @@
 # GraphRAG — HUST Knowledge Graph
 
-Build a domain-specific knowledge graph from training regulations using [GraphRAG](https://microsoft.github.io/graphrag/).
+Fix community report errors when using Microsoft GraphRAG to build a knowledge graph with the DeepSeek V4 Flash model.
 
 ## Quick Start
 
@@ -20,16 +20,16 @@ python3 scripts/graphrag_workflow.py \
   --cloudflare-key cf_xxx
 ```
 
-Or step-by-step:
+Or run step-by-step:
 
 ```bash
-# Init project
+# Initialize project
 python3 -m graphrag init --root project
 
-# Copy data
+# Copy input data
 cp /path/to/data.txt project/input/
 
-# Patch DeepSeek JSON fix
+# Apply DeepSeek JSON patch
 python3 scripts/patch_graphrag.py
 
 # Set API keys
@@ -38,15 +38,15 @@ DEEPSEEK_API_KEY=sk-xxx
 GRAPHRAG_API_KEY=cf_xxx
 EOF
 
-# Copy settings
+# Copy configuration
 cp settings.yaml project/
 
-# Index (use TMPDIR for writable temp)
+# Build the index (use TMPDIR for writable temp storage)
 cd project
 TMPDIR=./tmp python3 -m graphrag index
 ```
 
-### 3. Export rich GraphML (for Gephi / yEd)
+### 3. Export Rich GraphML (for Gephi / yEd)
 
 ```bash
 python3 scripts/export_graphml.py > project/output/rich_graph.graphml
@@ -54,14 +54,14 @@ python3 scripts/export_graphml.py > project/output/rich_graph.graphml
 
 ## Output
 
-```
+```text
 project/output/
-├── entities.parquet          # 573 entities
+├── entities.parquet          # 573 extracted entities
 ├── relationships.parquet     # 1,182 relationships with descriptions
-├── communities.parquet       # 91 communities
-├── community_reports.parquet # 89 LLM-generated reports
-├── graph.graphml             # Minimal GraphML (GraphRAG default)
-├── rich_graph.graphml        # Full GraphML (directed, with descriptions)
+├── communities.parquet       # 91 detected communities
+├── community_reports.parquet # 89 LLM-generated community reports
+├── graph.graphml             # Default minimal GraphML from GraphRAG
+├── rich_graph.graphml        # Full GraphML with directions & descriptions
 └── lancedb/                  # Vector search indices
 ```
 
@@ -69,14 +69,16 @@ project/output/
 
 | File | Purpose |
 |------|---------|
-| `scripts/graphrag_workflow.py` | End-to-end: install → init → patch → index |
-| `scripts/patch_graphrag.py` | Fix `response_format` issue with DeepSeek |
-| `scripts/export_graphml.py` | Export rich GraphML with descriptions & direction |
-| `settings.yaml` | Config template (entity types, chunking, LLMs) |
+| `scripts/graphrag_workflow.py` | End-to-end workflow: install → init → patch → index |
+| `scripts/patch_graphrag.py` | Fix the `response_format` issue with DeepSeek |
+| `scripts/export_graphml.py` | Export rich GraphML with descriptions and edge directions |
+| `settings.yaml` | Configuration template (entity types, chunking, LLMs) |
 
-## Why the patch?
+## Why is the patch needed?
 
-DeepSeek V4 Flash rejects `response_format: json_object` (405 error). The patch removes `response_format` from `community_reports_extractor.py` and parses JSON manually from `response.content`.
+DeepSeek V4 Flash rejects `response_format: json_object` and returns a `405` error.
+
+The patch removes `response_format` from `community_reports_extractor.py` and manually parses JSON from `response.content`.
 
 ## Tech Stack
 
